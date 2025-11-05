@@ -314,6 +314,46 @@ EOT;
         $this->assertMatchesRegularExpression('/Value ".+invented-license IL v3 or later" does not match/', $output);
     }
 
+        public function testExecuteWithSpecificFiles()
+    {
+        // Let's add a file with errors and warnings, and another one clean.
+        $contentFail = <<<'EOT'
+        <?php // phpcs:disable moodle.Files
+        $test = array("a", "b", "c"); // to trigger array syntax warning
+        EOT;
+
+        $contentSuccess = <<<'EOT'
+        <?php // phpcs:disable moodle.Files
+        $test = [
+          "a",
+          "b",
+          "c",
+        ];
+
+        EOT;
+
+        $this->fs->dumpFile($this->pluginDir . '/fail_a.php', $contentFail);
+        $this->fs->dumpFile($this->pluginDir . '/fail_b.php', $contentFail);
+        $this->fs->dumpFile($this->pluginDir . '/success_a.php', $contentSuccess);
+        $this->fs->dumpFile($this->pluginDir . '/success_b.php', $contentSuccess);
+
+        // By default it fails as two files have issues.
+        $commandTester = $this->executeCommand($this->pluginDir);
+        $this->assertSame(1, $commandTester->getStatusCode());
+
+        // Now only check the files that are clean.
+        $commandTester = $this->executeCommand($this->pluginDir, [
+            '--files' => $this->pluginDir . '/success_a.php,' . $this->pluginDir . '/success_b.php'
+        ]);
+        $this->assertSame(0, $commandTester->getStatusCode());
+
+        // Include one clean and one failing file.
+        $commandTester = $this->executeCommand($this->pluginDir, [
+            '--files' => $this->pluginDir . '/success_a.php,' . $this->pluginDir . '/fail_b.php'
+        ]);
+        $this->assertSame(1, $commandTester->getStatusCode());
+    }
+
     public function testExecuteNoFiles()
     {
         // Just random directory with no PHP files.

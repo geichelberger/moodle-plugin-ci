@@ -74,6 +74,12 @@ class CodeCheckerCommand extends AbstractPluginCommand
                 InputOption::VALUE_REQUIRED,
                 'Regex to use to match @license tags',
                 ''
+            )->addOption(
+                'files',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Comma separated list of files to check',
+                ''
             );
     }
 
@@ -154,6 +160,20 @@ class CodeCheckerCommand extends AbstractPluginCommand
         // to a valid regex ('GPL-3.0', 'https:', ...) to enable the checks.
         $licenseRegex = $input->getOption('license-regex');
         array_push($cmd, '--runtime-set', 'moodleLicenseRegex', $licenseRegex);
+
+        // If specific files were specified, filter the list of files to only those.
+        if (!empty($input->getOption('files'))) {
+            $specifiedfiles = array_map(
+                'trim',
+                explode(',', $input->getOption('files'))
+            );
+            $files = array_filter(
+                $files,
+                function ($file) use ($specifiedfiles) {
+                    return in_array($file, $specifiedfiles, true);
+                }
+            );
+        }
 
         // Add the files to process.
         foreach ($files as $file) {
