@@ -10,6 +10,7 @@ nbproject/
 composer.phar
 phpunit.xml
 .php_cs.cache
+.phpunit.result.cache
 .psalm.cache/
 /build/*
 !/build/.gitkeep
